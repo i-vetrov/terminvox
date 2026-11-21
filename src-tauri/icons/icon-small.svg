@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- TerminVox: the prompt's cursor is a theremin, its antenna is calling (amber = needs you). Simplified drawing for 64px and below -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34363d"/>
+      <stop offset="1" stop-color="#16171b"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9a9ea8"/>
+      <stop offset="0.5" stop-color="#e4e6ea"/>
+      <stop offset="1" stop-color="#9a9ea8"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <clipPath id="tile"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+
+  <!-- macOS icon grid: 824px tile centered in 1024 -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="183.5" fill="none" stroke="url(#rim)" stroke-width="3"/>
+
+  <!-- amber signal: full rings around the antenna tip, the outer one runs off the tile -->
+  <g fill="none" stroke="#f2c55c" stroke-width="52" clip-path="url(#tile)">
+    <circle cx="696" cy="392" r="112"/>
+    <circle cx="696" cy="392" r="216" opacity="0.6"/>
+  </g>
+
+  <!-- antenna, standing on the end of the cursor -->
+  <rect x="668" y="392" width="56" height="308" fill="url(#metal)"/>
+  <circle cx="696" cy="392" r="48" fill="#eceef1"/>
+
+  <!-- prompt >_ -->
+  <g fill="none" stroke="#eceef1" stroke-width="84" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="246,424 396,532 246,640"/>
+    <line x1="486" y1="700" x2="696" y2="700"/>
+  </g>
+</svg>
