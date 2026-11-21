@@ -1,6 +1,6 @@
 // run: node tests/util.test.mjs
 import assert from "node:assert/strict";
-import { shellQuote, parseTheme } from "../src/lib/util.ts";
+import { shellQuote, parseTheme, isLight } from "../src/lib/util.ts";
 
 assert.equal(shellQuote("/Users/me/a.png"), "/Users/me/a.png");
 assert.equal(shellQuote("/Users/me/My File.png"), "'/Users/me/My File.png'");
@@ -12,6 +12,11 @@ const entry = (k, r, g, b) =>
 const xml = `<plist><dict>${entry("Ansi 0 Color", 0, 0, 0)}${entry("Ansi 9 Color", 1, 0, 0)}${entry("Background Color", 0.1176, 0.1216, 0.1333)}${entry("Foreground Color", 1, 1, 1)}${entry("Bogus", 1, 1, 1)}</dict></plist>`;
 assert.deepEqual(parseTheme(xml), { black: "#000000", brightRed: "#ff0000", background: "#1e1f22", foreground: "#ffffff" });
 assert.throws(() => parseTheme("<plist/>"));
+
+assert.equal(isLight("#ffffff"), true);
+assert.equal(isLight("#fdf6e3"), true);
+assert.equal(isLight("#1e1f22"), false);
+assert.equal(isLight("#13773d"), false);
 
 // other terminals
 const want = { background: "#1e1f22", foreground: "#ffffff", red: "#ff0000", brightBlue: "#0000ff", cursor: "#aabbcc" };

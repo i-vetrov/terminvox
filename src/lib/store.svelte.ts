@@ -22,6 +22,7 @@ export type Settings = {
   copyOnSelect: boolean;
   notify: boolean;
   theme: Theme | null; // null = built-in
+  appearance: "system" | "light" | "dark"; // an imported theme overrides this: the window matches its background
   restoreFolders: boolean;
   resumeAgents: boolean;
   resumeFlags: boolean; // keep on/off flags like --dangerously-skip-permissions when resuming
@@ -36,6 +37,7 @@ export const defaultSettings: Settings = {
   copyOnSelect: true,
   notify: true,
   theme: null,
+  appearance: "system",
   restoreFolders: true,
   resumeAgents: true,
   resumeFlags: true,

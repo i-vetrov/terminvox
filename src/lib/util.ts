@@ -111,6 +111,12 @@ function confColors(text: string) {
   return theme;
 }
 
+/** Is this #rrggbb closer to white than to black? Decides whether the window around a terminal theme is light or dark. */
+export const isLight = (color: string) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 140;
+};
+
 /** Turn another terminal's color file into an xterm.js theme: iTerm2, macOS Terminal, Windows Terminal, Ghostty, kitty, Alacritty. */
 export function parseTheme(text: string): Record<string, string> {
   const t = text.trimStart();

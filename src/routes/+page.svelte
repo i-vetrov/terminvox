@@ -7,7 +7,7 @@
   import Sidebar from "$lib/Sidebar.svelte";
   import Settings from "$lib/Settings.svelte";
   import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, findTerm, allTerms, type Term } from "$lib/store.svelte";
-  import { show, showGroup, fitVisible, focusActive, restart, paste, applySettings, defaultTheme, termForRun, snapshot, find, endFind, found } from "$lib/terms.svelte";
+  import { show, showGroup, fitVisible, focusActive, restart, paste, applySettings, termTheme, mode, forcedMode, termForRun, snapshot, find, endFind, found } from "$lib/terms.svelte";
   import { dnd, draggable } from "$lib/dnd.svelte";
   import { update, startUpdateChecks, installAndRestart } from "$lib/update.svelte";
   import { shellQuote, renameInput, isMac, appKey, K } from "$lib/util";
@@ -164,7 +164,13 @@
 
   $effect(() => {
     JSON.stringify(app.settings); // track every setting
+    mode(); // and the OS switching between light and dark
     if (ready) untrack(applySettings);
+  });
+
+  $effect(() => {
+    document.documentElement.dataset.mode = mode();
+    getCurrentWindow().setTheme(forcedMode()).catch(() => {}); // title bar and native menus follow; null = follow the OS
   });
 
   // keep the active tab visible in the scrolling tab bar
@@ -303,7 +309,7 @@
       </button>
       <button class="settings-btn" title="Settings ({K.settings})" aria-label="Settings" onclick={() => (settingsOpen = true)}>⚙</button>
     </nav>
-    <div class="host" bind:this={host} style:background={(app.settings.theme ?? defaultTheme).background}>
+    <div class="host" bind:this={host} style:background={termTheme().background}>
       <div class="park" bind:this={park}></div>
       {#each app.panes as id (id)}
         {@const t = findTerm(id)?.t}
@@ -476,6 +482,20 @@
     --busy: #6aa0f7;
     --attention: #f2c55c;
     color-scheme: dark;
+  }
+  :global(:root[data-mode="light"]) {
+    --bg: #ffffff;
+    --panel: #f3f4f6;
+    --border: #dfe1e5;
+    --hover: #e6e8ec;
+    --selected: #d4e2ff;
+    --fg: #1f2329;
+    --muted: #6c707e;
+    --accent: #3574f0;
+    --ok: #2f9e4a;
+    --busy: #4a86f7;
+    --attention: #e0a100;
+    color-scheme: light;
   }
   :global(html, body) {
     margin: 0;

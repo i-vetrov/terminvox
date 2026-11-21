@@ -12,7 +12,7 @@ import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon, type ISearchOptions } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 import { app, findTerm, status, openGroup, activate } from "./store.svelte";
-import { detectAgent, resumeFor, isMac } from "./util";
+import { detectAgent, resumeFor, isMac, isLight } from "./util";
 
 type Live = {
   term: Terminal;
@@ -30,19 +30,52 @@ const live = new Map<string, Live>();
 let park: HTMLElement | null = null; // hidden holder for terminals not in a pane; set by show()
 const runs = new Map<string, string>(); // pty run id -> terminal id
 
-export const defaultTheme = {
+const darkTheme = {
   background: "#1e1f22",
   foreground: "#d4d4d4",
   cursor: "#d4d4d4",
   selectionBackground: "#3a4a6b",
 };
+// xterm's stock ANSI colors are picked for dark backgrounds (yellow and white vanish on white), so light gets its own 16
+const lightTheme = {
+  background: "#ffffff",
+  foreground: "#1f2329",
+  cursor: "#1f2329",
+  selectionBackground: "#c2d8ff",
+  black: "#383a42",
+  red: "#d1242f",
+  green: "#1a7f37",
+  yellow: "#9a6700",
+  blue: "#0969da",
+  magenta: "#8250df",
+  cyan: "#1b7c83",
+  white: "#6e7781",
+  brightBlack: "#57606a",
+  brightRed: "#a40e26",
+  brightGreen: "#2da44e",
+  brightYellow: "#bf8700",
+  brightBlue: "#218bff",
+  brightMagenta: "#a475f9",
+  brightCyan: "#3192aa",
+  brightWhite: "#8c959f",
+};
+
+// ---- light / dark ----
+const osDark = matchMedia("(prefers-color-scheme: dark)");
+const os = $state({ dark: osDark.matches });
+osDark.addEventListener("change", (e) => (os.dark = e.matches));
+/** The mode the window is pinned to, or null to follow the OS. An imported theme pins it to match its background. */
+export const forcedMode = (): "light" | "dark" | null =>
+  app.settings.theme ? (isLight(app.settings.theme.background) ? "light" : "dark") : app.settings.appearance === "system" ? null : app.settings.appearance;
+export const mode = () => forcedMode() ?? (os.dark ? "dark" : "light");
+export const termTheme = () => app.settings.theme ?? (mode() === "light" ? lightTheme : darkTheme);
 
 const termOptions = (): ITerminalOptions => ({
   fontFamily: app.settings.fontFamily,
   fontSize: app.settings.fontSize || 13, // number input can be empty while typing
   lineHeight: app.settings.lineHeight || 1,
   macOptionIsMeta: app.settings.optionIsMeta,
-  theme: app.settings.theme ?? defaultTheme,
+  theme: termTheme(),
 });
 
 /** Push current settings into every live terminal. */
@@ -259,10 +292,10 @@ export const found = $state({ index: -1, count: 0 });
 const searchOpts = (incremental: boolean): ISearchOptions => ({
   incremental,
   decorations: {
-    matchBackground: "#5c4a1a",
-    activeMatchBackground: "#b8862b",
+    matchBackground: mode() === "light" ? "#fbe7a8" : "#5c4a1a",
+    activeMatchBackground: mode() === "light" ? "#f2c55c" : "#b8862b",
     matchOverviewRuler: "#f2c55c",
-    activeMatchColorOverviewRuler: "#ffffff",
+    activeMatchColorOverviewRuler: mode() === "light" ? "#1f2329" : "#ffffff",
   },
 });
 /** dir 0 = as-you-type (stays on the current match), 1 = next, -1 = previous */

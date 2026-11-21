@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { app, defaultSettings, zoom, FONT_MIN, FONT_MAX } from "./store.svelte";
-  import { defaultTheme } from "./terms.svelte";
+  import { termTheme, mode } from "./terms.svelte";
   import { parseTheme, isMac, K } from "./util";
 
   let { onClose }: { onClose: () => void } = $props();
@@ -33,7 +33,7 @@
   const shown = $derived((fonts ?? []).filter((f) => (!monoOnly || f.mono) && f.name.toLowerCase().includes(query.toLowerCase())));
 
   // ---- theme ----
-  const theme = $derived(s.theme ?? defaultTheme) as Record<string, string>;
+  const theme = $derived(termTheme()) as Record<string, string>;
   const c = (k: string, fallback: string) => theme[k] ?? fallback;
   let themeError = $state("");
   async function importTheme(e: Event) {
@@ -199,6 +199,16 @@
       <small>Takes effect for agent sessions started after installing.</small>
 
       <h3>Colors</h3>
+      <div class="row">
+        <label>Appearance
+          <select bind:value={s.appearance} disabled={!!s.theme}>
+            <option value="system">Follow the system</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        {#if s.theme}<small>The imported theme is {mode()}, so the window is too. Reset it to choose.</small>{/if}
+      </div>
       <div class="row">
         <span>Theme: <b>{s.theme ? "imported" : "built-in"}</b></span>
         <label class="file">Import from another terminal…<input type="file" onchange={importTheme} hidden /></label>
