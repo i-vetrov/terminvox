@@ -1,6 +1,6 @@
 # Push a tag like v0.2.0 (`npm run release 0.2.0` does it) →
 #   1. a draft GitHub release with generated notes
-#   2. builds for macOS (universal, signed + notarized), Windows and Linux — these wait for your
+#   2. builds for macOS (universal, signed + notarized), Windows and Linux (x86-64 and ARM64) — these wait for your
 #      approval in the "release" environment, the only place the signing secrets live
 #   3. the draft is published; installed apps pick the update up from latest.json
 #
@@ -40,6 +40,8 @@ jobs:
           - platform: windows-latest
             args: ""
           - platform: ubuntu-22.04 # oldest supported glibc → the AppImage runs on more distros
+            args: ""
+          - platform: ubuntu-22.04-arm # ARM64 Linux (Raspberry Pi 5, ARM laptops, Linux VMs on Apple Silicon)
             args: ""
     runs-on: ${{ matrix.platform }}
     steps:
