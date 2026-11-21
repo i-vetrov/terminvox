@@ -6,6 +6,7 @@ use std::sync::Mutex;
 
 use portable_pty::{ChildKiller, CommandBuilder, MasterPty, PtySize, native_pty_system};
 use tauri::ipc::{Channel, InvokeResponseBody};
+#[cfg(target_os = "macos")]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -463,13 +464,13 @@ pub fn run() {
                 }
             }
 
-            // Custom menu without File > Close Window, so ⌘W/⌘T reach the page as tab shortcuts.
-            let settings = MenuItemBuilder::with_id("settings", "Settings…")
-                .accelerator("CmdOrCtrl+,")
-                .build(app)?;
-
+            // macOS: custom menu without File > Close Window, so ⌘W/⌘T reach the page as tab shortcuts.
+            // Windows/Linux: no menu bar at all. Settings has its own button and Ctrl+, in the page.
             #[cfg(target_os = "macos")]
-            let menu = {
+            {
+                let settings = MenuItemBuilder::with_id("settings", "Settings…")
+                    .accelerator("CmdOrCtrl+,")
+                    .build(app)?;
                 let app_menu = SubmenuBuilder::new(app, "TerminVox")
                     .about(None)
                     .separator()
@@ -494,20 +495,11 @@ pub fn run() {
                     .minimize()
                     .fullscreen()
                     .build()?;
-                MenuBuilder::new(app)
+                let menu = MenuBuilder::new(app)
                     .items(&[&app_menu, &edit, &window])
-                    .build()?
-            };
-
-            // Windows/Linux: no Copy/Paste menu items — their Ctrl+C/Ctrl+V accelerators would
-            // swallow the keys before the terminal sees them (Ctrl+C must reach the shell as SIGINT).
-            #[cfg(not(target_os = "macos"))]
-            let menu = {
-                let edit = SubmenuBuilder::new(app, "Edit").item(&settings).build()?;
-                MenuBuilder::new(app).items(&[&edit]).build()?
-            };
-
-            app.set_menu(menu)?;
+                    .build()?;
+                app.set_menu(menu)?;
+            }
             app.on_menu_event(|app, event| {
                 if event.id() == "settings" {
                     let _ = app.emit("open-settings", ());
