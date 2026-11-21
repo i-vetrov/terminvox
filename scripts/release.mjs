@@ -5,7 +5,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const sh = (cmd, opts = {}) => execSync(cmd, { encoding: "utf8", stdio: ["inherit", "pipe", "inherit"], ...opts }).trim();
+const sh = (cmd, opts = {}) => execSync(cmd, { encoding: "utf8", stdio: ["inherit", "pipe", "inherit"], ...opts })?.trim();
 const die = (msg) => (console.error(`✗ ${msg}`), process.exit(1));
 
 const version = process.argv[2]?.replace(/^v/, "");
