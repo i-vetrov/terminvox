@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TerminVox",
+  "version": "0.1.0",
+  "identifier": "dev.terminvox",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "TerminVox",
+        "width": 1400,
+        "height": 860,
+        "minWidth": 700,
+        "minHeight": 400
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "© 2026 Ivan Vetrau. MIT License.",
+    "publisher": "Ivan Vetrau",
+    "category": "DeveloperTool",
+    "shortDescription": "IDE-style terminal manager for coding agents",
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYxMjM0OEE3NkUxMDM1NEYKUldSUE5SQnVwMGdqOGF3VVpEeUpLMURHMmZRMUw0anRtRUk4VXdiaHJEYXpvcWd5UUo2YURrbTQK",
+      "endpoints": [
+        "https://github.com/i-vetrov/terminvox/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
