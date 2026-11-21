@@ -33,7 +33,7 @@ Dock badge and macOS notification when a terminal needs you while the app is in 
 
 The tab-stack button next to a group name replaces the tabs with that group's terminals (all started; other groups keep running in the background). Clicking single terminals still opens them as tabs from any group.
 
-Double-click to rename groups/terminals, drag to move/reorder, ⚙ for folder + startup command (e.g. `claude --continue`). ✕ deletes right away, or asks first if something in it is still running.
+Double-click to rename groups/terminals, drag to move/reorder, ⚙ for folder + startup command (e.g. `claude --continue`). A group's ⚙ sets a startup script (e.g. `cd ~/work/my-project`) that is typed into each new terminal created in that group, once. ✕ deletes right away, or asks first if something in it is still running.
 
 ## Status dots
 blue pulsing = output flowing · green = idle · yellow = needs you (bell/OSC 9 notification, or long run that went quiet while you weren't looking) · red ring = exited (Enter restarts).

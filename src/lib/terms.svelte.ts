@@ -11,7 +11,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon, type ISearchOptions } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
-import { app, findTerm, status, openGroup, activate } from "./store.svelte";
+import { app, findTerm, status, openGroup, activate, takeStartup } from "./store.svelte";
 import { detectAgent, resumeFor, isMac, isLight } from "./util";
 
 type Live = {
@@ -336,7 +336,9 @@ function start(id: string) {
   status[id] = "idle";
   // Pick up where it was: last folder, and the agent session if one was running.
   const cwd = (app.settings.restoreFolders && t.lastCwd) || t.cwd;
-  const command = (app.settings.resumeAgents && t.resume) || t.command;
+  // A terminal that was just created runs its group's startup script, each line as its own command.
+  const first = takeStartup(id)?.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).join("\r");
+  const command = first || (app.settings.resumeAgents && t.resume) || t.command;
   invoke("pty_spawn", { id: run, cwd, command, shell: app.settings.shell, cols: l.term.cols, rows: l.term.rows, onData }).catch((e) => {
     l.run = null;
     status[id] = "exited";

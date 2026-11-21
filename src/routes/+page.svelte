@@ -6,7 +6,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import Sidebar from "$lib/Sidebar.svelte";
   import Settings from "$lib/Settings.svelte";
-  import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, findTerm, allTerms, type Term } from "$lib/store.svelte";
+  import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, findTerm, allTerms, type Term, type Group } from "$lib/store.svelte";
   import { show, showGroup, fitVisible, focusActive, restart, paste, applySettings, termTheme, mode, forcedMode, termForRun, snapshot, find, endFind, found } from "$lib/terms.svelte";
   import { dnd, draggable } from "$lib/dnd.svelte";
   import { update, startUpdateChecks, installAndRestart } from "$lib/update.svelte";
@@ -124,6 +124,16 @@
     e.preventDefault();
   }
 
+  // group settings dialog
+  let editingGroup = $state<{ g: Group; name: string; startup: string } | null>(null);
+  function saveGroup() {
+    if (!editingGroup) return;
+    const { g, name, startup } = editingGroup;
+    g.name = name.trim() || g.name;
+    g.startup = startup.trim() || undefined;
+    editingGroup = null;
+  }
+
   // settings dialog
   let editing = $state<{ t: Term; name: string; cwd: string; command: string } | null>(null);
   const openEdit = (t: Term) => (editing = { t, name: t.name, cwd: t.cwd, command: t.command });
@@ -190,7 +200,7 @@
 
   // give keyboard focus back to the terminal when a dialog closes
   $effect(() => {
-    if (ready && !quick && !hist && !editing && !settingsOpen && !quitting && finding === null) untrack(focusActive);
+    if (ready && !quick && !hist && !editing && !editingGroup && !settingsOpen && !quitting && finding === null) untrack(focusActive);
   });
 
   const tabDrop = (id: string) => (target: string) => {
@@ -200,7 +210,7 @@
   };
 
   function onKey(e: KeyboardEvent) {
-    if (quick || hist || editing || settingsOpen || quitting) return;
+    if (quick || hist || editing || editingGroup || settingsOpen || quitting) return;
     const run = (fn: () => void) => (e.preventDefault(), e.stopPropagation(), fn());
     const mod = isMac ? e.metaKey : e.ctrlKey; // for , = - 0
     const digit = /^Digit[1-9]$/.test(e.code) ? +e.code.slice(5) : 0; // e.code: ⌥/Shift change e.key
@@ -248,7 +258,7 @@
 <svelte:window onkeydowncapture={onKey} />
 
 <main>
-  <Sidebar onEdit={openEdit} {confirmDelete} />
+  <Sidebar onEdit={openEdit} onEditGroup={(g) => (editingGroup = { g, name: g.name, startup: g.startup ?? "" })} {confirmDelete} />
 
   <section>
     <nav class="tabs">
@@ -388,6 +398,33 @@
           <div class="item muted">{hist.all.length ? "No matches" : "No shell history found"}</div>
         {/each}
       </div>
+    </div>
+  </div>
+{/if}
+
+{#if editingGroup}
+  <div class="overlay" role="presentation" onclick={() => (editingGroup = null)}>
+    <div
+      class="dialog"
+      role="dialog"
+      aria-label="Group settings"
+      tabindex="-1"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.key === "Escape" && (editingGroup = null)}
+    >
+      <form onsubmit={(e) => (e.preventDefault(), saveGroup())}>
+        <h3>Group settings</h3>
+        <label>Name <input bind:value={editingGroup.name} /></label>
+        <label
+          >Startup script
+          <textarea bind:value={editingGroup.startup} rows="4" placeholder="cd ~/work/my-project" spellcheck="false" use:focus></textarea>
+          <small>Typed into every new terminal you create in this group, one command per line. It runs once, when the terminal is created: not when it restarts or the app reopens.</small>
+        </label>
+        <div class="buttons">
+          <button type="button" onclick={() => (editingGroup = null)}>Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}
@@ -802,6 +839,7 @@
     overflow: hidden;
   }
   .palette input,
+  .dialog textarea,
   .dialog input {
     width: 100%;
     box-sizing: border-box;
@@ -820,6 +858,11 @@
     padding: 11px 14px;
     font-size: 14px;
   }
+  .dialog textarea {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    resize: vertical;
+  }
+  .dialog textarea:focus,
   .dialog input:focus {
     border-color: var(--accent);
   }

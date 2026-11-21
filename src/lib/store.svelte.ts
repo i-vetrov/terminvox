@@ -10,7 +10,7 @@ export type Term = {
   resume?: string; // agent was running last time: command that continues its session
   agent?: string; // short name of the agent running right now (e.g. "claude"), for the sidebar
 };
-export type Group = { id: string; name: string; collapsed: boolean; terms: Term[] };
+export type Group = { id: string; name: string; collapsed: boolean; terms: Term[]; startup?: string }; // startup: typed into each terminal created in the group
 export type Status = "off" | "busy" | "idle" | "attention" | "exited";
 
 export type Theme = Record<string, string>; // xterm ITheme keys -> css colors
@@ -225,6 +225,16 @@ export function nextAttention() {
 }
 
 // ---- tree edits ----
+// Terminals created this session that still owe their group's startup script. Not saved: the script runs on the
+// terminal's first start only, never when it restarts or the app reopens.
+const owed = new Map<string, string>();
+/** The group startup script for a terminal that has just been created, as one line per command; undefined after its first start. */
+export function takeStartup(id: string) {
+  const script = owed.get(id);
+  owed.delete(id);
+  return script;
+}
+
 export function addGroup() {
   const g: Group = { id: uid(), name: `Group ${app.groups.length + 1}`, collapsed: false, terms: [] };
   app.groups.push(g);
@@ -236,6 +246,7 @@ export function addTerm(groupId?: string, split = false) {
   const t: Term = { id: uid(), name: `Terminal ${allTerms().length + 1}`, cwd: findTerm(app.active)?.t.cwd ?? "~", command: "" };
   g.terms.push(t);
   g.collapsed = false;
+  if (g.startup?.trim()) owed.set(t.id, g.startup);
   if (split) splitWith(t.id);
   else activate(t.id);
   return t;
