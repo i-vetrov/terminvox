@@ -20,7 +20,7 @@ One window, IDE-style: terminals live in a named group tree (left), open ones as
 | ⌘W | Close tab (process keeps running) |
 | ⌥⌘1–9 | Open group N (tabs = all its terminals) |
 | ⌃Tab | Previous tab · ⌘⇧[ / ⌘⇧] cycle · ⌘1–9 tab N |
-| ⌘, | Settings: font picker with preview, size, line height, ⌥ as Meta, copy-on-select, notifications, .itermcolors import |
+| ⌘, | Settings: font picker with preview, size, line height, ⌥ as Meta, copy-on-select, notifications, color import from iTerm2, macOS Terminal, Windows Terminal, Ghostty, kitty and Alacritty |
 | ⌘+ / ⌘− / ⌘0 | Font bigger / smaller / reset |
 | ⇧Enter | Newline in Claude Code / Codex |
 | Home / End, ⌘← / ⌘→ | Start / end of line (real keys in full-screen apps like vim) |

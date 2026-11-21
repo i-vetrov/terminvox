@@ -1,6 +1,6 @@
 // run: node tests/util.test.mjs
 import assert from "node:assert/strict";
-import { shellQuote, parseItermColors } from "../src/lib/util.ts";
+import { shellQuote, parseTheme } from "../src/lib/util.ts";
 
 assert.equal(shellQuote("/Users/me/a.png"), "/Users/me/a.png");
 assert.equal(shellQuote("/Users/me/My File.png"), "'/Users/me/My File.png'");
@@ -10,8 +10,26 @@ const entry = (k, r, g, b) =>
   `<key>${k}</key><dict><key>Blue Component</key><real>${b}</real><key>Color Space</key><string>sRGB</string>` +
   `<key>Green Component</key><real>${g}</real><key>Red Component</key><real>${r}</real></dict>`;
 const xml = `<plist><dict>${entry("Ansi 0 Color", 0, 0, 0)}${entry("Ansi 9 Color", 1, 0, 0)}${entry("Background Color", 0.1176, 0.1216, 0.1333)}${entry("Foreground Color", 1, 1, 1)}${entry("Bogus", 1, 1, 1)}</dict></plist>`;
-assert.deepEqual(parseItermColors(xml), { black: "#000000", brightRed: "#ff0000", background: "#1e1f22", foreground: "#ffffff" });
-assert.throws(() => parseItermColors("<plist/>"));
+assert.deepEqual(parseTheme(xml), { black: "#000000", brightRed: "#ff0000", background: "#1e1f22", foreground: "#ffffff" });
+assert.throws(() => parseTheme("<plist/>"));
+
+// other terminals
+const want = { background: "#1e1f22", foreground: "#ffffff", red: "#ff0000", brightBlue: "#0000ff", cursor: "#aabbcc" };
+assert.deepEqual(parseTheme("# ghostty\nbackground = 1e1f22\nforeground = #FFFFFF\npalette = 1=#ff0000\npalette = 12=#0000ff\ncursor-color = #aabbcc\nfont-size = 14"), want);
+assert.deepEqual(parseTheme("background #1e1f22\nforeground #ffffff\ncolor1 #ff0000\ncolor12 #0000ff\ncursor #aabbcc\nfont_size 13.0"), want);
+assert.deepEqual(
+  parseTheme('[colors.primary]\nbackground = "#1e1f22"\nforeground = "0xffffff"\n[colors.normal]\nred = "#ff0000"\n[colors.bright]\nblue = "#0000ff"\n[colors.cursor]\ncursor = "#aabbcc"\n[font]\nsize = 12'),
+  want,
+);
+const scheme = { name: "Mine", background: "#1E1F22", foreground: "#FFFFFF", red: "#FF0000", brightBlue: "#0000FF", cursorColor: "#AABBCC" };
+assert.deepEqual(parseTheme(JSON.stringify(scheme)), want);
+assert.deepEqual(parseTheme(`{\n// comment\n"profiles":{"defaults":{"colorScheme":"Mine"}},"schemes":[{"name":"Other","background":"#000000","foreground":"#111111"},${JSON.stringify(scheme)}]}`), want);
+const nscolor = (k, rgb) => `<key>${k}</key><data>${btoa(`bplist00\u0001NSRGB\u0002${rgb}\u0000NSColorSpace`)}</data>`;
+assert.deepEqual(
+  parseTheme(`<plist><dict>${nscolor("BackgroundColor", "0.1176 0.1216 0.1333 0.95")}<key>TextColor</key><data>${btoa("bplist00\u0001NSWhite\u00021\u0000")}</data>${nscolor("ANSIRedColor", "1 0 0")}${nscolor("ANSIBrightBlueColor", "0 0 1")}<key>name</key><string>X</string></dict></plist>`),
+  { background: "#1e1f22", foreground: "#ffffff", red: "#ff0000", brightBlue: "#0000ff" },
+);
+assert.throws(() => parseTheme("theme = Dracula\nfont-size = 14"));
 console.log("ok");
 
 const { detectAgent, resumeFor } = await import("../src/lib/util.ts");

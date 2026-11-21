@@ -2,7 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { app, defaultSettings, zoom, FONT_MIN, FONT_MAX } from "./store.svelte";
   import { defaultTheme } from "./terms.svelte";
-  import { parseItermColors, isMac, K } from "./util";
+  import { parseTheme, isMac, K } from "./util";
 
   let { onClose }: { onClose: () => void } = $props();
   const s = app.settings;
@@ -40,7 +40,7 @@
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     try {
-      s.theme = parseItermColors(await file.text());
+      s.theme = parseTheme(await file.text());
       themeError = "";
     } catch (err) {
       themeError = err instanceof Error ? err.message : String(err);
@@ -201,11 +201,15 @@
       <h3>Colors</h3>
       <div class="row">
         <span>Theme: <b>{s.theme ? "imported" : "built-in"}</b></span>
-        <label class="file">Import .itermcolors…<input type="file" accept=".itermcolors" onchange={importTheme} hidden /></label>
+        <label class="file">Import from another terminal…<input type="file" onchange={importTheme} hidden /></label>
         {#if s.theme}<button onclick={() => (s.theme = null)}>Reset</button>{/if}
       </div>
       {#if themeError}<p class="error">{themeError}</p>{/if}
-      <small>From iTerm2: Settings → Profiles → Colors → Color Presets… → Export.</small>
+      <small>
+        Pick the file that holds the colors: an iTerm2 <code>.itermcolors</code> (Profiles → Colors → Color Presets… → Export), a macOS Terminal
+        <code>.terminal</code> (Shell → Export Settings…), a Windows Terminal <code>settings.json</code> or scheme, or a Ghostty, kitty or Alacritty
+        config or theme file.{#if isMac} In the file dialog, <kbd>⌘⇧.</kbd> shows hidden folders like <code>~/.config</code>.{/if}
+      </small>
 
       <div class="footer">
         <button onclick={() => Object.assign(s, defaultSettings)}>Restore defaults</button>
