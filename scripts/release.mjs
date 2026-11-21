@@ -30,7 +30,8 @@ sh("npm install --package-lock-only --ignore-scripts --no-audit --no-fund");
 sh("cargo update --workspace --offline", { cwd: "src-tauri" }); // refresh our own version in Cargo.lock
 
 sh("git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock");
-sh(`git commit -m "Release ${tag}"`);
+// the first release keeps the version already in the files, so there may be nothing to commit
+if (sh("git status --porcelain")) sh(`git commit -m "Release ${tag}"`);
 sh(`git tag -a ${tag} -m "TerminVox ${version}"`);
 sh(`git push --atomic origin main ${tag}`, { stdio: "inherit" });
 
