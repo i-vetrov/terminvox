@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { onMount, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import Sidebar from "$lib/Sidebar.svelte";
   import Settings from "$lib/Settings.svelte";
+  import Diff from "$lib/Diff.svelte";
   import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, findTerm, allTerms, type Term, type Group } from "$lib/store.svelte";
   import { show, showGroup, fitVisible, focusActive, restart, paste, applySettings, termTheme, mode, forcedMode, termForRun, snapshot, find, endFind, found } from "$lib/terms.svelte";
   import { dnd, draggable } from "$lib/dnd.svelte";
@@ -19,6 +20,7 @@
   const bodies = $state<Record<string, HTMLDivElement>>({}); // reactive: a new pane's box may bind after the effect first runs
   let ready = $state(false);
   let settingsOpen = $state(false);
+  let diffOpen = $state(false); // changes pane, right of the terminals
 
   // ⌘Q / window close: warn if anything is still running
   type Running = { id: string; name: string; group: string; program: string };
@@ -172,6 +174,12 @@
     if (ready) untrack(() => show(panes, focused, park));
   });
 
+  // the changes pane takes room from the terminals: refit them, and give the keyboard back when it closes
+  $effect(() => {
+    if (!diffOpen) untrack(focusActive);
+    tick().then(fitVisible);
+  });
+
   $effect(() => {
     JSON.stringify(app.settings); // track every setting
     mode(); // and the OS switching between light and dark
@@ -225,6 +233,7 @@
     if (appKey(e, "J")) return run(nextAttention);
     if (appKey(e, "T")) return run(() => addTerm());
     if (appKey(e, "D")) return run(() => addTerm(undefined, true));
+    if (appKey(e, "G")) return run(() => (diffOpen = !diffOpen));
     if (appKey(e, "W")) return run(() => app.active && closeTab(app.active));
     const paneMod = isMac ? e.metaKey && e.altKey : e.ctrlKey && e.altKey;
     if (paneMod && e.key === "ArrowLeft") return run(() => focusPane(-1));
@@ -312,6 +321,11 @@
           >Restart to update · {update.version}</button
         >
       {/if}
+      <button class="settings-btn" class:on={diffOpen} title="Uncommitted changes ({K.app('G')})" aria-label="Uncommitted changes" aria-pressed={diffOpen} onclick={() => (diffOpen = !diffOpen)}>
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <path d="M8 2.5v5M5.5 5h5M5.5 12h5" />
+        </svg>
+      </button>
       <button class="settings-btn" title="Search command history ({K.app('R')})" aria-label="Search command history" onclick={openHistory}>
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2.5 8a5.5 5.5 0 1 0 1.7-4M2.3 2v2.3h2.3M8 5v3.2l2 1.3" />
@@ -351,6 +365,7 @@
           </div>
         </div>
       {/each}
+      {#if diffOpen && app.active}<Diff onClose={() => (diffOpen = false)} />{/if}
       {#if ready && !app.active}
         <div class="empty">
           <p>No terminal open</p>
@@ -674,6 +689,9 @@
   .settings-btn:hover {
     color: var(--fg);
     background: var(--hover);
+  }
+  .settings-btn.on {
+    color: var(--accent);
   }
   .host {
     flex: 1;

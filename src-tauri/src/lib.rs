@@ -1,3 +1,4 @@
+mod git;
 mod history;
 mod hooks;
 use std::collections::HashMap;
@@ -519,7 +520,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             list_fonts,
-            pty_spawn, pty_write, pty_resize, pty_kill, load_json, save_json, pty_running, pty_snapshot, pty_kill_all, quit, hooks::hooks_status, hooks::hooks_set, history::shell_history
+            pty_spawn, pty_write, pty_resize, pty_kill, load_json, save_json, pty_running, pty_snapshot, pty_kill_all, quit, hooks::hooks_status, hooks::hooks_set, history::shell_history, git::git_changes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -227,3 +227,56 @@ export const K = isMac
       tab: (n: number) => `Alt+${n}`, group: (n: number) => `Ctrl+Alt+${n}`,
       altClick: "Alt+click", panes: "Ctrl+Alt+← / →", cycle: "Ctrl+PgUp / Ctrl+PgDn", recent: "Ctrl+Tab",
     };
+
+// ---- unified diff (git diff output) for the changes pane ----
+export type DiffLine = { kind: "add" | "del" | "ctx"; old?: number; new?: number; text: string };
+export type DiffFile = {
+  path: string;
+  from?: string; // old path when renamed
+  status: "modified" | "added" | "deleted" | "renamed";
+  binary: boolean;
+  added: number;
+  deleted: number;
+  hunks: { header: string; lines: DiffLine[] }[];
+};
+
+export function parseDiff(text: string): DiffFile[] {
+  const files: DiffFile[] = [];
+  let f: DiffFile | undefined;
+  let h: DiffFile["hunks"][number] | undefined;
+  let o = 0;
+  let n = 0;
+  for (const line of text.split("\n")) {
+    if (line.startsWith("diff --git ")) {
+      // "a/PATH b/PATH": both halves are the same path except for renames, which name theirs below
+      const rest = line.slice(11);
+      f = { path: rest.slice(2, 2 + (rest.length - 5) / 2), status: "modified", binary: false, added: 0, deleted: 0, hunks: [] };
+      files.push(f);
+      h = undefined;
+    } else if (!f) continue;
+    else if (line.startsWith("@@")) {
+      const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)/.exec(line);
+      if (!m) continue;
+      o = +m[1];
+      n = +m[2];
+      h = { header: line, lines: [] };
+      f.hunks.push(h);
+    } else if (!h) {
+      // the file's header lines
+      if (line.startsWith("new file")) f.status = "added";
+      else if (line.startsWith("deleted file")) f.status = "deleted";
+      else if (line.startsWith("rename from ")) (f.status = "renamed"), (f.from = line.slice(12));
+      else if (line.startsWith("rename to ")) f.path = line.slice(10);
+      else if (line.startsWith("+++ b/")) f.path = line.slice(6);
+      else if (line.startsWith("Binary files ") || line.startsWith("GIT binary patch")) f.binary = true;
+    } else if (line[0] === "+") {
+      h.lines.push({ kind: "add", new: n++, text: line.slice(1) });
+      f.added++;
+    } else if (line[0] === "-") {
+      h.lines.push({ kind: "del", old: o++, text: line.slice(1) });
+      f.deleted++;
+    } else if (line[0] === " ") h.lines.push({ kind: "ctx", old: o++, new: n++, text: line.slice(1) });
+    // anything else ("\ No newline at end of file", the empty last line) is not content
+  }
+  return files;
+}

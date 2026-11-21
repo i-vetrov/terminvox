@@ -15,6 +15,7 @@ One window, IDE-style: terminals live in a named group tree (left), open ones as
 | ⌘F | Find in the terminal (↩ / ⇧↩ or ⌘G / ⇧⌘G for next / previous, Esc closes) |
 | ⌘T | New terminal in current group |
 | ⌘D | New terminal in a split pane beside the current one |
+| ⌘G | Show or hide the uncommitted changes of the current terminal's repository |
 | ⌥-click tab / terminal | Open it in a pane beside the current one (up to 4) |
 | ⌥⌘← / ⌥⌘→ | Focus the pane on the left / right |
 | ⌘W | Close tab (process keeps running) |
@@ -71,6 +72,10 @@ Processes don't survive app restart, but each terminal reopens where it was:
 
 ⌘D or ⌥-click shows terminals side by side. Each pane has a header with its status dot; ✕ there closes only the pane (the tab and process stay). ⌘W on a split tab closes its pane too. Panes are saved with the layout.
 
+## Changes pane
+
+⌘G (or the ± button in the tab bar) opens a read-only pane to the right of the terminals with everything uncommitted in the focused terminal's git repository, compared with the last commit: staged and unstaged edits, plus new files. It reads like the "Files changed" tab on GitHub, one file after another, each with a header you can fold. It refreshes when you switch terminals, when the terminal stops working, when the window gets focus, and with its refresh button. It needs `git` on your PATH.
+
 ## Exact "waiting for you" status
 
 Settings → *Exact “waiting for you” status* → **Install** adds a hook to Claude Code (`~/.claude/settings.json`: `UserPromptSubmit`, `Stop`, `Notification`) and/or Codex (`~/.codex/config.toml`: `notify`). A backup (`*.terminvox.bak`) is written first; **Remove** takes the hooks out again and leaves your own hooks alone. Codex is skipped if you already have your own `notify`.
@@ -83,7 +88,7 @@ Everything above works on Windows too, with these differences:
 
 | macOS | Windows |
 |---|---|
-| ⌘ + letter (⌘T, ⌘W, ⌘P, ⌘J, ⌘F, ⌘D) | Ctrl+Shift + letter (plain Ctrl+letter goes to the shell) |
+| ⌘ + letter (⌘T, ⌘W, ⌘P, ⌘J, ⌘F, ⌘D, ⌘G) | Ctrl+Shift + letter (plain Ctrl+letter goes to the shell) |
 | ⌘, / ⌘+ / ⌘− / ⌘0 | Ctrl+, / Ctrl+= / Ctrl+− / Ctrl+0 |
 | ⌘1–9 tab, ⌥⌘1–9 group | Alt+1–9 tab, Ctrl+Alt+1–9 group |
 | ⌘G / ⇧⌘G find next/previous | F3 / Shift+F3 |

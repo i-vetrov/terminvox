@@ -1,6 +1,6 @@
 // run: node tests/util.test.mjs
 import assert from "node:assert/strict";
-import { shellQuote, parseTheme, isLight } from "../src/lib/util.ts";
+import { shellQuote, parseTheme, isLight, parseDiff } from "../src/lib/util.ts";
 
 assert.equal(shellQuote("/Users/me/a.png"), "/Users/me/a.png");
 assert.equal(shellQuote("/Users/me/My File.png"), "'/Users/me/My File.png'");
@@ -74,3 +74,54 @@ assert.equal(shellQuote("C:\\x\\a.png", true), "C:\\x\\a.png");
 assert.equal(shellQuote("C:\\$it's\\a.png", true), "'C:\\$it''s\\a.png'");
 assert.equal(shellQuote("/Users/me/My Files/a.png", false), "'/Users/me/My Files/a.png'");
 console.log("agents ok");
+
+// git diff output for the changes pane
+const diff = parseDiff(
+  [
+    "diff --git a/src/a b.ts b/src/a b.ts",
+    "index 1111111..2222222 100644",
+    "--- a/src/a b.ts",
+    "+++ b/src/a b.ts",
+    "@@ -10,4 +10,5 @@ function f() {",
+    " keep",
+    "-old",
+    "+new",
+    "+++ more", // an added line that looks like a header
+    " ",
+    "\\ No newline at end of file",
+    "@@ -40 +41,2 @@",
+    " tail",
+    "+end",
+    "diff --git a/old.txt b/new.txt",
+    "similarity index 100%",
+    "rename from old.txt",
+    "rename to new.txt",
+    "diff --git a/gone.txt b/gone.txt",
+    "deleted file mode 100644",
+    "--- a/gone.txt",
+    "+++ /dev/null",
+    "@@ -1 +0,0 @@",
+    "-bye",
+    "diff --git a/pic.png b/pic.png",
+    "new file mode 100644",
+    "Binary files /dev/null and b/pic.png differ",
+    "",
+  ].join("\n"),
+);
+assert.deepEqual(diff.map((f) => [f.path, f.status, f.added, f.deleted, f.binary]), [
+  ["src/a b.ts", "modified", 3, 1, false],
+  ["new.txt", "renamed", 0, 0, false],
+  ["gone.txt", "deleted", 0, 1, false],
+  ["pic.png", "added", 0, 0, true],
+]);
+assert.equal(diff[1].from, "old.txt");
+assert.deepEqual(diff[0].hunks[0].lines, [
+  { kind: "ctx", old: 10, new: 10, text: "keep" },
+  { kind: "del", old: 11, text: "old" },
+  { kind: "add", new: 11, text: "new" },
+  { kind: "add", new: 12, text: "++ more" },
+  { kind: "ctx", old: 12, new: 13, text: "" },
+]);
+assert.deepEqual(diff[0].hunks[1].lines.at(-1), { kind: "add", new: 42, text: "end" });
+assert.deepEqual(parseDiff(""), []);
+console.log("diff ok");
