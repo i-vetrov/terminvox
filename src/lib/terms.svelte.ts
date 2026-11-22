@@ -231,6 +231,25 @@ function create(id: string, host: HTMLElement): Live {
     },
   });
   term.open(el);
+  // A program that scrolls itself (a full-screen agent, vim, less) gets one step per wheel event, and
+  // xterm first cuts trackpad travel to 0.3, so a line needs three rows of finger movement. Count rows
+  // here and pass on one line-sized step per row. Mouse wheels (big deltas) and scrollback are left alone.
+  let travel = 0;
+  const steps = new WeakSet<Event>();
+  term.attachCustomWheelEventHandler((e) => {
+    if (steps.has(e) || e.deltaMode !== WheelEvent.DOM_DELTA_PIXEL || !e.deltaY || Math.abs(e.deltaY) >= 50 || e.shiftKey) return true;
+    if (term.modes.mouseTrackingMode === "none" && term.buffer.active.type !== "alternate") return true;
+    travel += e.deltaY / (el.clientHeight / term.rows || 16);
+    const n = Math.trunc(travel);
+    travel -= n;
+    for (let i = 0; i < Math.abs(n); i++) {
+      const step = new WheelEvent("wheel", { deltaY: Math.sign(n), deltaMode: WheelEvent.DOM_DELTA_LINE, clientX: e.clientX, clientY: e.clientY, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, bubbles: true, cancelable: true });
+      steps.add(step);
+      e.target?.dispatchEvent(step);
+    }
+    e.preventDefault();
+    return false;
+  });
   // clicking into a split pane focuses it
   term.textarea?.addEventListener("focus", () => app.active !== id && app.panes.includes(id) && activate(id));
 
