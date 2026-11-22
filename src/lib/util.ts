@@ -280,3 +280,23 @@ export function parseDiff(text: string): DiffFile[] {
   }
   return files;
 }
+
+// ---- links in terminal output ----
+/** A file: URL (agents print these as hyperlinks) as a plain path. */
+export function fileUrlPath(url: string): string {
+  const path = decodeURIComponent(url.replace(/^file:\/\/[^/]*/i, ""));
+  return /^\/[A-Za-z]:/.test(path) ? path.slice(1) : path; // file:///C:/x → C:/x
+}
+
+/** Things in one line of output that look like file paths, with their columns (end exclusive).
+ *  Loose on purpose ("and/or" matches): the caller keeps only the ones that exist on disk.
+ *  ponytail: no spaces in paths and one screen row at a time; a path wrapped over two rows is not a link. */
+export function findPaths(line: string): { path: string; start: number; end: number }[] {
+  const text = line.replace(/[a-z][\w+.-]*:\/\/\S+/gi, (url) => " ".repeat(url.length)); // web links are not paths
+  const out: { path: string; start: number; end: number }[] = [];
+  for (const m of text.matchAll(/(?:[A-Za-z]:(?=[\\/])|~(?=[\\/]))?[\w.@%+\\/-]+/g)) {
+    const path = m[0].replace(/\.+$/, "");
+    if (/[\\/]/.test(path) && /\w/.test(path)) out.push({ path, start: m.index, end: m.index + path.length });
+  }
+  return out;
+}

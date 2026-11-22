@@ -36,6 +36,34 @@ fn expand_home(path: &str) -> String {
     }
 }
 
+/// A path printed in a terminal, made absolute against that terminal's folder.
+fn resolve(cwd: &str, path: &str) -> std::path::PathBuf {
+    let p = std::path::PathBuf::from(expand_home(path));
+    if p.is_absolute() { p } else { std::path::Path::new(&expand_home(cwd)).join(p) }
+}
+
+/// Which of the paths found in terminal output exist, so only those become links.
+#[tauri::command]
+async fn paths_exist(cwd: String, paths: Vec<String>) -> Vec<bool> {
+    paths.iter().map(|p| resolve(&cwd, p).exists()).collect()
+}
+
+/// Show a clicked path in the file manager. A plain folder is opened; anything else is selected in
+/// its folder and never opened, so a click cannot run a file (a macOS .app is a folder with an extension).
+#[tauri::command]
+async fn reveal_path(app: tauri::AppHandle, cwd: String, path: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    let p = resolve(&cwd, &path);
+    if !p.exists() {
+        return Err("No such file or folder".into());
+    }
+    if p.is_dir() && p.extension().is_none() {
+        app.opener().open_path(p.to_string_lossy(), None::<&str>).map_err(|e| e.to_string())
+    } else {
+        app.opener().reveal_item_in_dir(&p).map_err(|e| e.to_string())
+    }
+}
+
 /// The shell to run: the one chosen in Settings, else the user's login shell / PowerShell.
 fn shell_command(chosen: &str) -> CommandBuilder {
     let program = match chosen.trim() {
@@ -520,7 +548,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             list_fonts,
-            pty_spawn, pty_write, pty_resize, pty_kill, load_json, save_json, pty_running, pty_snapshot, pty_kill_all, quit, hooks::hooks_status, hooks::hooks_set, history::shell_history, git::git_changes
+            pty_spawn, pty_write, pty_resize, pty_kill, load_json, save_json, pty_running, pty_snapshot, pty_kill_all, quit, hooks::hooks_status, hooks::hooks_set, history::shell_history, git::git_changes, paths_exist, reveal_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -76,6 +76,10 @@ Processes don't survive app restart, but each terminal reopens where it was:
 
 ⌘G (or the ± button in the tab bar) opens a read-only pane to the right of the terminals with everything uncommitted in the focused terminal's git repository, compared with the last commit: staged and unstaged edits, plus new files. It reads like the "Files changed" tab on GitHub, one file after another, each with a header you can fold. It refreshes when you switch terminals, when the terminal stops working, when the window gets focus, and with its refresh button. It needs `git` on your PATH.
 
+## Links
+
+Click a web link in a terminal to open it in your browser. Click a file or folder path to show it in Finder (Explorer on Windows, the file manager on Linux): a folder is opened, a file is selected in its folder and never run. Only paths that exist on this machine become links; relative ones are looked up in the terminal's current folder. Links the program marks itself (agents do this) work the same way.
+
 ## Exact "waiting for you" status
 
 Settings → *Exact “waiting for you” status* → **Install** adds a hook to Claude Code (`~/.claude/settings.json`: `UserPromptSubmit`, `Stop`, `Notification`) and/or Codex (`~/.codex/config.toml`: `notify`). A backup (`*.terminvox.bak`) is written first; **Remove** takes the hooks out again and leaves your own hooks alone. Codex is skipped if you already have your own `notify`.

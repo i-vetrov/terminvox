@@ -12,7 +12,7 @@ import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon, type ISearchOptions } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 import { app, findTerm, status, openGroup, activate, takeStartup } from "./store.svelte";
-import { detectAgent, resumeFor, isMac, isLight } from "./util";
+import { detectAgent, resumeFor, isMac, isLight, fileUrlPath, findPaths } from "./util";
 
 type Live = {
   term: Terminal;
@@ -187,13 +187,28 @@ function keyAction(e: KeyboardEvent, term: Terminal): string | (() => void) | nu
   return null;
 }
 
+// ---- links ----
+const folder = (id: string) => { const t = findTerm(id)?.t; return t?.lastCwd || t?.cwd || "~"; };
+
+/** Web links go to the browser; files and folders are shown in the file manager, never run. */
+function openLink(id: string, uri: string) {
+  if (/^(https?|mailto):/i.test(uri)) return void openUrl(uri).catch(() => {});
+  if (/^[a-z][\w+.-]+:/i.test(uri) && !/^file:/i.test(uri)) return; // some other scheme: leave it alone
+  invoke("reveal_path", { cwd: folder(id), path: /^file:/i.test(uri) ? fileUrlPath(uri) : uri }).catch(() => {});
+}
+
 // ---- lifecycle ----
 function create(id: string, host: HTMLElement): Live {
   const el = document.createElement("div");
   el.className = "term";
   host.appendChild(el);
 
-  const term = new Terminal({ allowProposedApi: true, cursorBlink: true, scrollback: 10000, ...termOptions() });
+  const open = (uri: string) => openLink(id, uri);
+  // linkHandler: hyperlinks the program marks itself (agents do); xterm's default asks with confirm(), which a webview has not.
+  const term = new Terminal({
+    allowProposedApi: true, cursorBlink: true, scrollback: 10000, ...termOptions(),
+    linkHandler: { allowNonHttpProtocols: true, activate: (_e, uri) => open(uri) },
+  });
   const fit = new FitAddon();
   term.loadAddon(fit);
   const search = new SearchAddon();
@@ -203,7 +218,18 @@ function create(id: string, host: HTMLElement): Live {
   });
   term.loadAddon(new Unicode11Addon());
   term.unicode.activeVersion = "11";
-  term.loadAddon(new WebLinksAddon((_e, uri) => openUrl(uri)));
+  term.loadAddon(new WebLinksAddon((_e, uri) => open(uri)));
+  // Paths in the output that exist on this machine are links too.
+  term.registerLinkProvider({
+    provideLinks(y, done) {
+      const found = findPaths(term.buffer.active.getLine(y - 1)?.translateToString(true) ?? "");
+      if (!found.length) return done(undefined);
+      invoke<boolean[]>("paths_exist", { cwd: folder(id), paths: found.map((f) => f.path) }).then(
+        (ok) => done(found.filter((_, i) => ok[i]).map((f) => ({ text: f.path, range: { start: { x: f.start + 1, y }, end: { x: f.end, y } }, activate: () => open(f.path) }))),
+        () => done(undefined),
+      );
+    },
+  });
   term.open(el);
   // clicking into a split pane focuses it
   term.textarea?.addEventListener("focus", () => app.active !== id && app.panes.includes(id) && activate(id));

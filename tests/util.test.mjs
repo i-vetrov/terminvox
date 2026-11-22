@@ -1,6 +1,6 @@
 // run: node tests/util.test.mjs
 import assert from "node:assert/strict";
-import { shellQuote, parseTheme, isLight, parseDiff } from "../src/lib/util.ts";
+import { shellQuote, parseTheme, isLight, parseDiff, fileUrlPath, findPaths } from "../src/lib/util.ts";
 
 assert.equal(shellQuote("/Users/me/a.png"), "/Users/me/a.png");
 assert.equal(shellQuote("/Users/me/My File.png"), "'/Users/me/My File.png'");
@@ -125,3 +125,14 @@ assert.deepEqual(diff[0].hunks[0].lines, [
 assert.deepEqual(diff[0].hunks[1].lines.at(-1), { kind: "add", new: 42, text: "end" });
 assert.deepEqual(parseDiff(""), []);
 console.log("diff ok");
+
+assert.equal(fileUrlPath("file:///Users/me/my%20app/a.ts"), "/Users/me/my app/a.ts");
+assert.equal(fileUrlPath("file://host/Users/me/a.ts"), "/Users/me/a.ts");
+assert.equal(fileUrlPath("file:///C:/work/a.ts"), "C:/work/a.ts");
+const paths = (l) => findPaths(l).map((p) => p.path);
+assert.deepEqual(paths("● Read src/lib/util.ts:12 and ~/work/api."), ["src/lib/util.ts", "~/work/api"]);
+assert.deepEqual(paths("see https://terminvox.dev/privacy or ./a/b"), ["./a/b"]);
+assert.deepEqual(paths("C:\\work\\api\\a.ts (/usr/local/bin)"), ["C:\\work\\api\\a.ts", "/usr/local/bin"]);
+assert.deepEqual(paths("no paths here: 12, done."), []);
+assert.deepEqual(findPaths("x /tmp/a.")[0], { path: "/tmp/a", start: 2, end: 8 });
+console.log("links ok");
