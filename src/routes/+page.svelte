@@ -7,7 +7,7 @@
   import Sidebar from "$lib/Sidebar.svelte";
   import Settings from "$lib/Settings.svelte";
   import Diff from "$lib/Diff.svelte";
-  import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, findTerm, allTerms, type Term, type Group } from "$lib/store.svelte";
+  import { app, status, load, saveNow, activate, splitWith, closePane, focusPane, closeTab, moveTab, previousTab, cycleTab, zoom, nextAttention, addTerm, nextName, findTerm, allTerms, type Term, type Group } from "$lib/store.svelte";
   import { show, showGroup, fitVisible, focusActive, restart, paste, applySettings, termTheme, mode, forcedMode, termForRun, snapshot, find, endFind, found } from "$lib/terms.svelte";
   import { dnd, draggable } from "$lib/dnd.svelte";
   import { update, startUpdateChecks, installAndRestart } from "$lib/update.svelte";
@@ -136,6 +136,19 @@
     editingGroup = null;
   }
 
+  // new terminal: straight away, or after asking for its name (Settings → New terminals)
+  let naming = $state<{ groupId?: string; split: boolean; name: string } | null>(null);
+  function newTerm(groupId?: string, split = false) {
+    if (app.settings.askName) naming = { groupId, split, name: nextName() };
+    else addTerm(groupId, split);
+  }
+  function createNamed() {
+    if (!naming) return;
+    const { groupId, split, name } = naming;
+    naming = null;
+    addTerm(groupId, split, name);
+  }
+
   // settings dialog
   let editing = $state<{ t: Term; name: string; cwd: string; command: string } | null>(null);
   const openEdit = (t: Term) => (editing = { t, name: t.name, cwd: t.cwd, command: t.command });
@@ -208,7 +221,7 @@
 
   // give keyboard focus back to the terminal when a dialog closes
   $effect(() => {
-    if (ready && !quick && !hist && !editing && !editingGroup && !settingsOpen && !quitting && finding === null) untrack(focusActive);
+    if (ready && !quick && !hist && !naming && !editing && !editingGroup && !settingsOpen && !quitting && finding === null) untrack(focusActive);
   });
 
   const tabDrop = (id: string) => (target: string) => {
@@ -218,7 +231,7 @@
   };
 
   function onKey(e: KeyboardEvent) {
-    if (quick || hist || editing || editingGroup || settingsOpen || quitting) return;
+    if (quick || hist || naming || editing || editingGroup || settingsOpen || quitting) return;
     const run = (fn: () => void) => (e.preventDefault(), e.stopPropagation(), fn());
     const mod = isMac ? e.metaKey : e.ctrlKey; // for , = - 0
     const digit = /^Digit[1-9]$/.test(e.code) ? +e.code.slice(5) : 0; // e.code: ⌥/Shift change e.key
@@ -231,8 +244,8 @@
     if (appKey(e, "P")) return run(() => (quick = { q: "", i: 0 }));
     if (appKey(e, "R")) return run(openHistory);
     if (appKey(e, "J")) return run(nextAttention);
-    if (appKey(e, "T")) return run(() => addTerm());
-    if (appKey(e, "D")) return run(() => addTerm(undefined, true));
+    if (appKey(e, "T")) return run(() => newTerm());
+    if (appKey(e, "D")) return run(() => newTerm(undefined, true));
     if (appKey(e, "G")) return run(() => (diffOpen = !diffOpen));
     if (appKey(e, "W")) return run(() => app.active && closeTab(app.active));
     const paneMod = isMac ? e.metaKey && e.altKey : e.ctrlKey && e.altKey;
@@ -262,12 +275,13 @@
   }
 
   const focus = (n: HTMLElement) => n.focus();
+  const focusAll = (n: HTMLInputElement) => (n.focus(), n.select()); // typing replaces the suggested name
 </script>
 
 <svelte:window onkeydowncapture={onKey} />
 
 <main>
-  <Sidebar onEdit={openEdit} onEditGroup={(g) => (editingGroup = { g, name: g.name, startup: g.startup ?? "" })} {confirmDelete} />
+  <Sidebar onAdd={newTerm} onEdit={openEdit} onEditGroup={(g) => (editingGroup = { g, name: g.name, startup: g.startup ?? "" })} {confirmDelete} />
 
   <section>
     <nav class="tabs">
@@ -313,7 +327,7 @@
           </div>
         {/if}
       {/each}
-      <button class="new" title="New terminal ({K.app('T')}) · split: {K.app('D')}" onclick={() => addTerm()}>＋</button>
+      <button class="new" title="New terminal ({K.app('T')}) · split: {K.app('D')}" onclick={() => newTerm()}>＋</button>
       <div class="tabs-end" data-drop="tabs-end" class:over={dnd.dragging && dnd.over === "tabs-end"}></div>
       </div>
       {#if update.version}
@@ -438,6 +452,21 @@
         <div class="buttons">
           <button type="button" onclick={() => (editingGroup = null)}>Cancel</button>
           <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
+{#if naming}
+  <div class="overlay" role="presentation" onclick={() => (naming = null)}>
+    <div class="dialog" role="dialog" aria-label="New terminal" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === "Escape" && (naming = null)}>
+      <form onsubmit={(e) => (e.preventDefault(), createNamed())}>
+        <h3>New terminal</h3>
+        <label>Name <input bind:value={naming.name} use:focusAll /></label>
+        <div class="buttons">
+          <button type="button" onclick={() => (naming = null)}>Cancel</button>
+          <button type="submit" class="primary">Create</button>
         </div>
       </form>
     </div>

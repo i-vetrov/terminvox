@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { app, status, SIDEBAR_WIDTH, activate, splitWith, isGroupOpen, addGroup, addTerm, removeTerm, moveTerm, moveGroup, type Term, type Group } from "./store.svelte";
+  import { app, status, SIDEBAR_WIDTH, activate, splitWith, isGroupOpen, addGroup, removeTerm, moveTerm, moveGroup, type Term, type Group } from "./store.svelte";
   import { dispose, showGroup } from "./terms.svelte";
   import { dnd, draggable } from "./dnd.svelte";
   import { renameInput, K } from "./util";
   import { findTerm } from "./store.svelte";
 
   let {
+    onAdd,
     onEdit,
     onEditGroup,
     confirmDelete,
-  }: { onEdit: (t: Term) => void; onEditGroup: (g: Group) => void; confirmDelete: (ids: string[], what: "group" | "terminal", action: () => void) => Promise<boolean> } = $props();
+  }: { onAdd: (groupId: string) => void; onEdit: (t: Term) => void; onEditGroup: (g: Group) => void; confirmDelete: (ids: string[], what: "group" | "terminal", action: () => void) => Promise<boolean> } = $props();
 
   let renaming = $state<string | null>(null);
 
@@ -92,7 +93,7 @@
         {/if}
         {#if attentionCount(g.terms)}<span class="badge">{attentionCount(g.terms)}</span>{/if}
         <span class="actions">
-          <button title="New terminal" onclick={(e) => (e.stopPropagation(), addTerm(g.id))}>＋</button>
+          <button title="New terminal" onclick={(e) => (e.stopPropagation(), onAdd(g.id))}>＋</button>
           <button title="Rename" onclick={(e) => (e.stopPropagation(), (renaming = g.id))}>✎</button>
           <button title="Startup script for new terminals in this group" onclick={(e) => (e.stopPropagation(), onEditGroup(g))}>⚙</button>
           <button

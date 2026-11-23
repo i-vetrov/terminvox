@@ -13,7 +13,7 @@ One window, IDE-style: terminals live in a named group tree (left), open ones as
 | ⌘R | Search shell command history; Enter puts the command on the prompt |
 | ⌘J | Jump to next terminal waiting for you (yellow) |
 | ⌘F | Find in the terminal (↩ / ⇧↩ or ⌘G / ⇧⌘G for next / previous, Esc closes) |
-| ⌘T | New terminal in current group |
+| ⌘T | New terminal in current group (Settings → New terminals can ask for its name first) |
 | ⌘D | New terminal in a split pane beside the current one |
 | ⌘G | Show or hide the uncommitted changes of the current terminal's repository |
 | ⌥-click tab / terminal | Open it in a pane beside the current one (up to 4) |

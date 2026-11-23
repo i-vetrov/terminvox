@@ -23,6 +23,7 @@ export type Settings = {
   notify: boolean;
   theme: Theme | null; // null = built-in
   appearance: "system" | "light" | "dark"; // an imported theme overrides this: the window matches its background
+  askName: boolean; // ask for a name when a terminal is created
   restoreFolders: boolean;
   resumeAgents: boolean;
   resumeFlags: boolean; // keep on/off flags like --dangerously-skip-permissions when resuming
@@ -38,6 +39,7 @@ export const defaultSettings: Settings = {
   notify: true,
   theme: null,
   appearance: "system",
+  askName: false,
   restoreFolders: true,
   resumeAgents: true,
   resumeFlags: true,
@@ -241,9 +243,11 @@ export function addGroup() {
   return g;
 }
 
-export function addTerm(groupId?: string, split = false) {
+export const nextName = () => `Terminal ${allTerms().length + 1}`;
+
+export function addTerm(groupId?: string, split = false, name?: string) {
   const g = app.groups.find((x) => x.id === groupId) ?? findTerm(app.active)?.g ?? app.groups[0] ?? addGroup();
-  const t: Term = { id: uid(), name: `Terminal ${allTerms().length + 1}`, cwd: findTerm(app.active)?.t.cwd ?? "~", command: "" };
+  const t: Term = { id: uid(), name: name?.trim() || nextName(), cwd: findTerm(app.active)?.t.cwd ?? "~", command: "" };
   g.terms.push(t);
   g.collapsed = false;
   if (g.startup?.trim()) owed.set(t.id, g.startup);

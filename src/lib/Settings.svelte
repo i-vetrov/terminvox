@@ -153,6 +153,9 @@
           : "e.g. pwsh.exe, powershell.exe, cmd.exe, C:\\Program Files\\Git\\bin\\bash.exe, wsl.exe"}</small
       >
 
+      <h3>New terminals</h3>
+      <label class="check"><input type="checkbox" bind:checked={s.askName} /> Ask for a name when a terminal is created</label>
+
       <h3>Restore on restart</h3>
       <label class="check"><input type="checkbox" bind:checked={s.restoreFolders} /> Reopen each terminal in the folder it was last in</label>
       <label class="check"><input type="checkbox" bind:checked={s.resumeAgents} /> Restart coding agents that were running, continuing their session
