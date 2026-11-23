@@ -37,7 +37,7 @@ The tab-stack button next to a group name replaces the tabs with that group's te
 Double-click to rename groups/terminals, drag to move/reorder, ⚙ for folder + startup command (e.g. `claude --continue`). A group's ⚙ sets a startup script (e.g. `cd ~/work/my-project`) that is typed into each new terminal created in that group, once. ✕ deletes right away, or asks first if something in it is still running.
 
 ## Status dots
-blue pulsing = output flowing · green = idle · yellow = needs you (bell/OSC 9 notification, or long run that went quiet while you weren't looking) · red ring = exited (Enter restarts).
+blue pulsing = output flowing · green = idle · yellow = needs you (bell/OSC 9 notification, or long run that went quiet while you weren't looking) · red ring = exited without you typing anything, such as a shell that failed to start (Enter restarts). Leaving a shell yourself (`exit`, Ctrl+D) closes its tab and deletes the terminal.
 
 Saved automatically (human-readable JSON, safe to copy between machines):
 

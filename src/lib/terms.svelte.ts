@@ -11,7 +11,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon, type ISearchOptions } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
-import { app, findTerm, status, openGroup, activate, takeStartup } from "./store.svelte";
+import { app, findTerm, status, openGroup, activate, takeStartup, removeTerm } from "./store.svelte";
 import { detectAgent, resumeFor, isMac, isLight, fileUrlPath, findPaths } from "./util";
 
 type Live = {
@@ -22,6 +22,7 @@ type Live = {
   run: string | null; // id of the current PTY process; changes on every restart
   gl?: WebglAddon;
   busySince: number;
+  typed?: boolean; // you typed into this run: when it ends, it is you leaving (exit, Ctrl+D), not a shell that failed to start
   hooked?: boolean; // Claude Code reports its own state for this run: trust it, skip the timing guess
   quiet?: ReturnType<typeof setTimeout>;
 };
@@ -126,6 +127,7 @@ listen<{ id: string; code: number | null }>("pty-exit", ({ payload }) => {
   const l = id && live.get(id);
   if (!id || !l || l.run !== payload.id) return; // stale run (already restarted / disposed)
   l.run = null;
+  if (l.typed) return dispose(id), removeTerm(id); // you left the shell: the tab and the terminal go with it
   clearTimeout(l.quiet);
   status[id] = "exited";
   const t = findTerm(id)?.t;
@@ -289,6 +291,7 @@ function create(id: string, host: HTMLElement): Live {
       if (data === "\r") start(id);
       return;
     }
+    l.typed = true;
     write(id, data);
   });
   term.onResize(({ cols, rows }) => l.run && invoke("pty_resize", { id: l.run, cols, rows }));
@@ -377,6 +380,7 @@ function start(id: string) {
     onOutput(id, l);
   };
   l.run = run;
+  l.typed = false;
   runs.set(run, id);
   status[id] = "idle";
   // Pick up where it was: last folder, and the agent session if one was running.
