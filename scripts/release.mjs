@@ -15,6 +15,7 @@ const tag = `v${version}`;
 if (sh("git status --porcelain")) die("working tree has uncommitted changes — commit or stash them first");
 if (sh("git rev-parse --abbrev-ref HEAD") !== "main") die("releases are cut from main");
 if (sh(`git tag -l ${tag}`)) die(`${tag} already exists`);
+if (!readFileSync("CHANGELOG.md", "utf8").includes(`\n## ${version}\n`)) die(`write the release notes first: add a "## ${version}" section to CHANGELOG.md and commit it`);
 
 const edit = (file, fn) => writeFileSync(file, fn(readFileSync(file, "utf8")));
 const setJsonVersion = (file) =>

@@ -1,5 +1,5 @@
 # Push a tag like v0.2.0 (`npm run release 0.2.0` does it) →
-#   1. a draft GitHub release with generated notes
+#   1. a draft GitHub release with this version's notes from CHANGELOG.md
 #   2. builds for macOS (universal, signed + notarized), Windows and Linux (x86-64 and ARM64) — these wait for your
 #      approval in the "release" environment, the only place the signing secrets live
 #   3. the draft is published; installed apps pick the update up from latest.json
@@ -20,12 +20,15 @@ jobs:
     outputs:
       id: ${{ steps.create.outputs.id }}
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: create
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "TerminVox ${TAG#v}"
+          awk -v h="## ${TAG#v}" '$0 == h { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          grep -q . notes.md # no notes for this version: stop here
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --notes-file notes.md --title "TerminVox ${TAG#v}"
           echo "id=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json databaseId -q .databaseId)" >> "$GITHUB_OUTPUT"
 
   build:
